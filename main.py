@@ -13,12 +13,10 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # LOAD ENVIRONMENT VARIABLES
-# load_dotenv()
-# BOT_TOKEN = os.getenv("TELEGRAM_CRITIC_API")
-# API_URL = os.getenv("API_ENDPOINT")
+load_dotenv()
+BOT_TOKEN = os.getenv("TELEGRAM_CRITIC_API")
+API_URL = os.getenv("API_ENDPOINT")
 
-BOT_TOKEN = "7921324091:AAFuEhNPdj2ZHq1LOJNegD2meO_xm-4_OlU"
-API_URL = "http://154.194.52.202/generate"
 
 # INITIALIZE BOT
 bot = Bot(token=BOT_TOKEN)
