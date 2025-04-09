@@ -8,6 +8,7 @@ from aiogram.filters import Command
 from aiogram.types import Message
 from dotenv import load_dotenv
 
+
 # CONFIGURE LOGGING
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # Logging
 logger = logging.getLogger(__name__)
