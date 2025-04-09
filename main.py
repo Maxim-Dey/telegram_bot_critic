@@ -17,7 +17,6 @@ load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_CRITIC_API")
 API_URL = os.getenv("API_ENDPOINT")
 
-
 # INITIALIZE BOT
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
