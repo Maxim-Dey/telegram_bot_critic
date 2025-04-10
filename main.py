@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_CRITIC_API")
 API_URL = os.getenv("API_ENDPOINT")
+USER = os.getenv("USER")
+PASSWORD = os.getenv("PASSWORD")
 
 # INITIALIZE BOT
 bot = Bot(token=BOT_TOKEN)
@@ -30,8 +32,12 @@ dp.include_router(router) # Register router
 # SUPPORT FUNCTION
 ## Function to split long messages
 MAX_LEN = 2048
-async def send_long_message(chat_id: int, text: str):
-    if not text or not text.strip():
+async def splitting_long_message(chat_id: int, text):
+    # Handle case when text is a dictionary
+    if isinstance(text, dict):
+        text = json.dumps(text, ensure_ascii=False, indent=2)
+        
+    if not text or (isinstance(text, str) and not text.strip()):
         await bot.send_message(chat_id, "Получен пустой ответ от API.")
         return
 
@@ -163,18 +169,31 @@ async def handle_message(message: Message):
             # Log that we're sending a request to API
             logger.info(f"Отправка запроса в API от пользователя {user_id}")
             
-            async with session.post(API_URL, json=payload, auth=aiohttp.BasicAuth('username', 'password'), headers=headers, timeout=60) as response:
+            async with session.post(API_URL, json=payload, auth=aiohttp.BasicAuth(USER, PASSWORD), headers=headers, timeout=60) as response:
                 # Delete processing message
-                # await bot.delete_message(chat_id=message.chat.id, message_id=processing_message.message_id)
+                await bot.delete_message(chat_id=message.chat.id, message_id=processing_message.message_id)
                 
                 if response.status == 200:
                     api_response = await response.json()
-                    response_text = api_response.get("response", "Пустой ответ от API")
+                    
+                    # Handle nested response structure - extract text if available
+                    if isinstance(api_response, dict):
+                        if "response" in api_response:
+                            response_text = api_response["response"]
+                            # If response is a dict itself with a text field, extract just the text
+                            if isinstance(response_text, dict) and "text" in response_text:
+                                response_text = response_text["text"]
+                        elif "text" in api_response:
+                            response_text = api_response["text"]
+                        else:
+                            response_text = "Структура ответа API не соответствует ожидаемой"
+                    else:
+                        response_text = api_response
                     
                     # Log that we received a response from API
                     logger.info(f"Получен ответ от API для пользователя {user_id}")
                     
-                    await send_long_message(message.chat.id, response_text)
+                    await splitting_long_message(message.chat.id, response_text)
                 else:
                     error_text = f"Ошибка API: Код статуса {response.status}"
                     if response.headers.get("content-type", "").startswith("application/json"):
@@ -187,7 +206,7 @@ async def handle_message(message: Message):
                     
     except aiohttp.ClientConnectorError:
         await message.answer("Не удалось подключиться к API. Проверьте URL и доступность сервера.")
-    except aiohttp.ClientTimeout:
+    except asyncio.TimeoutError:
         await message.answer("Превышено время ожидания ответа от API.")
     except Exception as e:
         error_message = f"Произошла ошибка: {str(e)}"
