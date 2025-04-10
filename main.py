@@ -176,6 +176,10 @@ async def handle_message(message: Message):
                 if response.status == 200:
                     api_response = await response.json()
                     
+                    # Log the raw API response structure
+                    # logger.info(f"Raw API response type: {type(api_response).__name__}")
+                    # logger.info(f"Raw API response content: {json.dumps(api_response, ensure_ascii=False)}")
+                    
                     # Handle nested response structure - extract text if available
                     if isinstance(api_response, dict):
                         if "response" in api_response:
