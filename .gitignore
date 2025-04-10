@@ -1,2 +1,3 @@
 .env
 user_services.json
+.gitignore
