@@ -1,12 +1,13 @@
 import os
+import json
 import logging
 import aiohttp
 import asyncio
-import json
-from aiogram import Bot, Dispatcher, Router
-from aiogram.filters import Command
-from aiogram.types import Message
 from dotenv import load_dotenv
+from aiogram.types import Message
+from aiogram.filters import Command
+from aiogram import Bot, Dispatcher, Router
+
 
 
 # CONFIGURE LOGGING
@@ -24,13 +25,10 @@ dp = Dispatcher()
 router = Router()
 dp.include_router(router) # Register router
 
-# FUNCTION FOR SYSTEM MESSAGE
-@router.message(Command("start"))
-async def cmd_start(message: Message):
-    await message.answer("Готов к труду и обороне.")
+
 
 # SUPPORT FUNCTION
-# Function to split long messages
+## Function to split long messages
 MAX_LEN = 2048
 async def send_long_message(chat_id: int, text: str):
     if not text or not text.strip():
@@ -52,9 +50,93 @@ async def send_long_message(chat_id: int, text: str):
             
     logger.info(f"Сообщения отправлена пользователю {chat_id}")
 
-# Handler for text messages
+
+
+## Initialize user services data. JSON file to store user service preferences
+USER_SERVICES_FILE = "user_services.json"
+def load_user_services():
+    if os.path.exists(USER_SERVICES_FILE):
+        try:
+            with open(USER_SERVICES_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            logger.error(f"Error decoding {USER_SERVICES_FILE}. Creating a new one.")
+    return {}
+
+### Save user services data
+def save_user_services(user_services):
+    with open(USER_SERVICES_FILE, 'w', encoding='utf-8') as f:
+        json.dump(user_services, f, ensure_ascii=False, indent=2)
+
+### Global variable to store user service preferences
+user_services = load_user_services()
+
+### Get user service type or default if not found
+def get_user_service(user_id):
+    user_id_str = str(user_id)
+    if user_id_str not in user_services:
+        user_services[user_id_str] = "alfa_friday"
+        save_user_services(user_services)
+    return user_services[user_id_str]
+
+
+
+# FUNCTION FOR SYSTEM MESSAGE
+@router.message(Command("start"))
+async def cmd_start(message: Message):
+    await message.answer("Готов помогать. Выбери в «Меню» какой сервис тебе нужен. По умолчанию включен «Альфа-Пятница».")
+
+@router.message(Command("alfa_friday"))
+async def alfa_friday(message: Message):
+    user_id = str(message.from_user.id)
+    user_services[user_id] = "alfa_friday"
+    save_user_services(user_services)
+    await message.answer("Включен сервис «Альфа-Пятница».")
+
+@router.message(Command("static_trainer"))
+async def static_trainer(message: Message):
+    user_id = str(message.from_user.id)
+    user_services[user_id] = "static_trainer"
+    save_user_services(user_services)
+    await message.answer("Включен сервис «Статичный тренер».")
+
+@router.message(Command("spoiler_trainer"))
+async def spoiler_trainer(message: Message):
+    user_id = str(message.from_user.id)
+    user_services[user_id] = "spoiler_trainer"
+    save_user_services(user_services)
+    await message.answer("Включен сервис «Тренер-спойлер».")
+
+@router.message(Command("stories_trainer"))
+async def stories_trainer(message: Message):
+    user_id = str(message.from_user.id)
+    user_services[user_id] = "stories_trainer"
+    save_user_services(user_services)
+    await message.answer("Включен сервис «Тренер в видео».")
+
+@router.message(Command("final_trainer"))
+async def final_trainer(message: Message):
+    user_id = str(message.from_user.id)
+    user_services[user_id] = "final_trainer"
+    save_user_services(user_services)
+    await message.answer("Включен сервис «Финальный тренер».")
+
+@router.message(Command("speach_trainer"))
+async def speach_trainer(message: Message):
+    user_id = str(message.from_user.id)
+    user_services[user_id] = "speach_trainer"
+    save_user_services(user_services)
+    await message.answer("Включен сервис «Прямая речь».") 
+
+
+
+# HANDLER FOR TEXT MESSAGES
 @router.message()
 async def handle_message(message: Message):
+    # Check if the message is a text message
+    if not message.text:
+        return 
+    
     user_query = message.text
     user_id = message.from_user.id
     
@@ -64,10 +146,13 @@ async def handle_message(message: Message):
     # Send a status message
     processing_message = await message.answer("Обрабатываю ваш запрос...")
     
+    # Get the user's selected service type
+    service_type = get_user_service(user_id)
+    
     # Prepare the request payload
     payload = {
         "query": user_query,
-        "type": "alfa_friday"
+        "type": service_type
     }
     
     try:
@@ -80,7 +165,7 @@ async def handle_message(message: Message):
             
             async with session.post(API_URL, json=payload, auth=aiohttp.BasicAuth('username', 'password'), headers=headers, timeout=60) as response:
                 # Delete processing message
-                await bot.delete_message(chat_id=message.chat.id, message_id=processing_message.message_id)
+                # await bot.delete_message(chat_id=message.chat.id, message_id=processing_message.message_id)
                 
                 if response.status == 200:
                     api_response = await response.json()
@@ -109,7 +194,10 @@ async def handle_message(message: Message):
         logging.error(error_message)
         await message.answer("Извините, произошла ошибка при обработке вашего запроса.")
 
-# Main function to start the bot
+
+
+
+# MAIN FUNCTION TO START THE BOT
 async def main():
     await dp.start_polling(bot)
 
