@@ -1,0 +1,10 @@
+supervisord.conf
+supervisord.pid
+supervisor.sock
+
+.env
+.venv
+user_services.json
+
+.DS_Store
+__pycache__/
