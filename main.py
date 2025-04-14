@@ -45,7 +45,7 @@ async def splitting_long_message(chat_id: int, text):
         await bot.send_message(chat_id, text, parse_mode="HTML")
         logger.info(f"Сообщение отправлено пользователю {chat_id}")
         return
-
+    
     parts = [text[i:i+MAX_LEN] for i in range(0, len(text), MAX_LEN)]
     for part in parts:
         try:
@@ -53,7 +53,7 @@ async def splitting_long_message(chat_id: int, text):
         except Exception as e:
             await bot.send_message(chat_id, part)
             logging.error(f"Ошибка при отправке HTML: {e}")
-            
+
     logger.info(f"Сообщения отправлена пользователю {chat_id}")
 
 
@@ -174,30 +174,27 @@ async def handle_message(message: Message):
                 await bot.delete_message(chat_id=message.chat.id, message_id=processing_message.message_id)
                 
                 if response.status == 200:
+
                     api_response = await response.json()
-                    
-                    # Log the raw API response structure
-                    # logger.info(f"Raw API response type: {type(api_response).__name__}")
-                    # logger.info(f"Raw API response content: {json.dumps(api_response, ensure_ascii=False)}")
-                    
-                    # Handle nested response structure - extract text if available
+                    # print(json.dumps(api_response, ensure_ascii=False, indent=2))
+                    # await splitting_long_message(message.chat.id, api_response)
+
                     if isinstance(api_response, dict):
-                        if "response" in api_response:
-                            response_text = api_response["response"]
-                            # If response is a dict itself with a text field, extract just the text
-                            if isinstance(response_text, dict) and "text" in response_text:
-                                response_text = response_text["text"]
-                        elif "text" in api_response:
-                            response_text = api_response["text"]
+                        response_content = api_response.get("response", {})
+                        logger.info(f"Type of response_content: {type(response_content)}")
+                        
+                        if isinstance(response_content, dict) and "text" in response_content:
+                            response_send = response_content["text"]
+                        elif isinstance(response_content, dict) and "result" in response_content and "message" in response_content:
+                            response_result = response_content["result"]
+                            response_message = response_content["message"]
+                            response_send = f"Рецензия:\n{response_message}\n\nОтредактированный вариант:\n{response_result}"
                         else:
-                            response_text = "Структура ответа API не соответствует ожидаемой"
+                            response_send = "Структура ответа API не соответствует ожидаемой"
                     else:
-                        response_text = api_response
+                        response_send = "Структура ответа API не соответствует ожидаемой"
+                    await splitting_long_message(message.chat.id, response_send)
                     
-                    # Log that we received a response from API
-                    logger.info(f"Получен ответ от API для пользователя {user_id}")
-                    
-                    await splitting_long_message(message.chat.id, response_text)
                 else:
                     error_text = f"Ошибка API: Код статуса {response.status}"
                     if response.headers.get("content-type", "").startswith("application/json"):
