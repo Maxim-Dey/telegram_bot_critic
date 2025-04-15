@@ -4,6 +4,7 @@ import logging
 import aiohttp
 import asyncio
 from dotenv import load_dotenv
+from aiogram.enums import ParseMode
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram import Bot, Dispatcher, Router
@@ -42,14 +43,14 @@ async def splitting_long_message(chat_id: int, text):
         return
 
     if len(text) <= MAX_LEN:
-        await bot.send_message(chat_id, text, parse_mode="HTML")
+        await bot.send_message(chat_id, text, parse_mode=ParseMode.MARKDOWN_V2)
         logger.info(f"Сообщение отправлено пользователю {chat_id}")
         return
     
     parts = [text[i:i+MAX_LEN] for i in range(0, len(text), MAX_LEN)]
     for part in parts:
         try:
-            await bot.send_message(chat_id, part, parse_mode="HTML")
+            await bot.send_message(chat_id, part, parse_mode=ParseMode.MARKDOWN_V2)
         except Exception as e:
             await bot.send_message(chat_id, part)
             logging.error(f"Ошибка при отправке HTML: {e}")
@@ -150,7 +151,7 @@ async def handle_message(message: Message):
     logger.info(f"Получено сообщение от пользователя {user_id}")
     
     # Send a status message
-    processing_message = await message.answer("Обрабатываю ваш запрос...")
+    processing_message = await message.answer("Обрабатываю запрос...")
     
     # Get the user's selected service type
     service_type = get_user_service(user_id)
@@ -188,7 +189,10 @@ async def handle_message(message: Message):
                         elif isinstance(response_content, dict) and "result" in response_content and "message" in response_content:
                             response_result = response_content["result"]
                             response_message = response_content["message"]
-                            response_send = f"Рецензия:\n{response_message}\n\nВозможные варианты исправлений:\n{response_result}"
+                            if response_message in ['OK', 'ОК']:
+                                response_send = f"*Рецензия:*\n{response_message}"
+                            else:
+                                response_send = f"*Рецензия:*\n{response_message}\n\n*Возможные варианты исправлений:*\n• {"\n• ".join(response_result.split('\n\n'))}"
                         else:
                             response_send = "Структура ответа API не соответствует ожидаемой"
                     else:
