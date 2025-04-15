@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 BOT_TOKEN = os.getenv("TELEGRAM_CRITIC_API")
 API_URL = os.getenv("API_ENDPOINT")
-USER = os.getenv("USER")
+USER = os.getenv("USERNAME")
 PASSWORD = os.getenv("PASSWORD")
 
 # INITIALIZE BOT
