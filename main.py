@@ -43,14 +43,14 @@ async def splitting_long_message(chat_id: int, text):
         return
 
     if len(text) <= MAX_LEN:
-        await bot.send_message(chat_id, text, parse_mode=ParseMode.MARKDOWN_V2)
+        await bot.send_message(chat_id, text, parse_mode=ParseMode.HTML)
         logger.info(f"Сообщение отправлено пользователю {chat_id}")
         return
     
     parts = [text[i:i+MAX_LEN] for i in range(0, len(text), MAX_LEN)]
     for part in parts:
         try:
-            await bot.send_message(chat_id, part, parse_mode=ParseMode.MARKDOWN_V2)
+            await bot.send_message(chat_id, part, parse_mode=ParseMode.HTML)
         except Exception as e:
             await bot.send_message(chat_id, part)
             logging.error(f"Ошибка при отправке HTML: {e}")
@@ -190,9 +190,9 @@ async def handle_message(message: Message):
                             response_result = response_content["result"]
                             response_message = response_content["message"]
                             if response_message in ['OK', 'ОК']:
-                                response_send = f"*Рецензия:*\n{response_message}"
+                                response_send = f"<b>Рецензия:</b>\n{response_message}"
                             else:
-                                response_send = f"*Рецензия:*\n{response_message}\n\n*Возможные варианты исправлений:*\n• {"\n• ".join(response_result.split('\n\n'))}"
+                                response_send = f"<b>Рецензия:</b>\n{response_message}\n\n*Возможные варианты исправлений:*\n• {"\n• ".join(response_result.split('\n\n'))}"
                         else:
                             response_send = "Структура ответа API не соответствует ожидаемой"
                     else:
