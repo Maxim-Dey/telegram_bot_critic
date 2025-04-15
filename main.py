@@ -188,7 +188,7 @@ async def handle_message(message: Message):
                         elif isinstance(response_content, dict) and "result" in response_content and "message" in response_content:
                             response_result = response_content["result"]
                             response_message = response_content["message"]
-                            response_send = f"Рецензия:\n{response_message}\n\nОтредактированный вариант:\n{response_result}"
+                            response_send = f"Рецензия:\n{response_message}\n\nВозможные варианты исправлений:\n{response_result}"
                         else:
                             response_send = "Структура ответа API не соответствует ожидаемой"
                     else:
