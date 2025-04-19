@@ -192,7 +192,8 @@ async def handle_message(message: Message):
                             if response_message in ['OK', 'ОК']:
                                 response_send = f"<b>Рецензия:</b>\n{response_message}"
                             else:
-                                response_send = f"<b>Рецензия:</b>\n{response_message}\n\n<b>Возможные варианты исправлений:</b>\n• {"\n• ".join(response_result.split('\n\n'))}"
+                                examples = f'<b>Возможный вариант исправления:</b>\n{response_result[0]}' if len(response_result) == 1 else f'<b>Возможные варианты исправлений:</b>\n• {"\n• ".join(response_result)}'
+                                response_send = f"<b>Рецензия:</b>\n{response_message}\n\n{examples}"
                         else:
                             response_send = "Структура ответа API не соответствует ожидаемой"
                     else:
